@@ -20,6 +20,7 @@ namespace CityAR
         private DataObject _dataObject;
         private GameObject _platform;
         private Data _data;
+        public PinchSlider slider;
 
         private void Start()
         {
@@ -201,7 +202,7 @@ namespace CityAR
             Debug.Log(scale.x);
         }
 
-        private Vector3 Scale(GameObject parent)
+        private Vector3 ScaleToParent(GameObject parent)
         {
             Vector3 size = new Vector3(0.01f, 0.01f, 0.01f);
             Transform currentTransform = parent.transform;
@@ -218,6 +219,19 @@ namespace CityAR
 
             return size;
         }
+
+        public void scale(GameObject gameObject, float value){
+            Vector3 scale = gameObject.transform.localScale;
+            Vector3 position = gameObject.transform.localPosition;
+            gameObject.transform.localScale = new Vector3(scale.x, )
+        }
+
+        public void changeScale(SliderEventData sliderData){
+            scale(_platform, sliderData.NewValue*2f);
+            try{
+                _platform.GetChild(0).GetComponent<BoundsControl>().UpdateBounds();
+            }
+        } 
 
         private bool ContainsDirs(Entry entry)
         {
