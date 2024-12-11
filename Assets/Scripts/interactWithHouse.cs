@@ -32,7 +32,7 @@ public class interactWithHouse : MonoBehaviour, IMixedRealityTouchHandler
         Debug.Log("1");
         tooltip.gameObject.SetActive(true);
         var houseData = house.GetComponent<houseData>();
-        tooltip.ToolTipText = houseData.name + ":\n Number of Lines: " + houseData.nol + ":\n Number of Methods: " + houseData.nom + ":\n Number of Abstract Classes: " + houseData.noac + ":\n Number of Iterfaces: " + houseData.noi;
+        tooltip.ToolTipText = houseData.name + ":\n       Number of Lines: " + houseData.nol + ",\n       Number of Methods: " + houseData.nom + ",\n       Number of Abstract Classes: " + houseData.noac + ",\n       Number of Iterfaces: " + houseData.noi;
         gameObject.GetComponent<MeshRenderer>().material.color = Color.red;
     }
 
