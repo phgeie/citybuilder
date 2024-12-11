@@ -17,10 +17,10 @@ namespace CityAR
     {
         public GameObject districtPrefab;
         public GameObject housePrefab;
+        public PinchSlider slider;
         private DataObject _dataObject;
         private GameObject _platform;
         private Data _data;
-        public PinchSlider slider;
 
         private void Start()
         {
@@ -163,7 +163,7 @@ namespace CityAR
                     List<Entry> files = new List<Entry>();
                     for (int i = 0; i < filesCount; i++)
                     {
-                        var file = entry.files[i];
+                        Entry file = entry.files[i];
                         if (file.type.Equals("File"))
                         {
                             files.Add(file);
@@ -176,7 +176,7 @@ namespace CityAR
                     float gridHeight = gridSize;
                     for (int i = 0; i < filesCount; i++)
                     {
-                        var file = files[i];
+                        Entry file = files[i];
                         int row = i / gridSize;
                         int column = i % gridSize;
                         float xOffset = (row - (gridSize - 1) / 2.0f) * 0.02f / prefabInstance.transform.localScale.x;
@@ -190,16 +190,17 @@ namespace CityAR
 
         private void BuildHouse(Entry entry, Entry parentEntry, GameObject parent, float s, float xOffset, float zOffset)
         {
-            Vector3 scale = Scale(parent);
+            Vector3 scale = ScaleToParent(parent);
             Vector3 newPosition = new Vector3(-0.5f, 0f, 0.5f) + new Vector3(xOffset, 0, zOffset);
             entry.position = newPosition;
-            var prefabInstance = Instantiate(housePrefab, parent.transform, true);
+            GameObject prefabInstance = Instantiate(housePrefab, parent.transform, true);
+
+            prefabInstance.GetComponent<houseData>().value = entry.numberOfLines;
 
             prefabInstance.name = entry.name + "_Build_" + parentEntry.deepth;
-            float h = entry.numberOfLines * 0.25f;
+            float h = entry.numberOfLines;
             prefabInstance.transform.localScale += new Vector3(scale.x, h, scale.z);
-            prefabInstance.transform.localPosition = new Vector3(entry.position.x, h / 2f + 1.25f, entry.position.z);
-            Debug.Log(scale.x);
+            prefabInstance.transform.localPosition = new Vector3(entry.position.x, h / 2f + 1f, entry.position.z);
         }
 
         private Vector3 ScaleToParent(GameObject parent)
@@ -220,17 +221,27 @@ namespace CityAR
             return size;
         }
 
-        public void scale(GameObject gameObject, float value){
+        public void scaleHouse(GameObject gameObject, float value){
+            if (gameObject == null) return;
+
+            var houseData = gameObject.GetComponent<houseData>();
+            if (houseData != null){
+            
             Vector3 scale = gameObject.transform.localScale;
             Vector3 position = gameObject.transform.localPosition;
-            gameObject.transform.localScale = new Vector3(scale.x, )
+            float h = houseData.value;
+            gameObject.transform.localScale = new Vector3(scale.x, h*value, scale.z);
+            gameObject.transform.localPosition = new Vector3(position.x, h*value/2f + 1f, position.z);
+            }
+            for (int i = 0; i < gameObject.transform.childCount; i++)
+            {
+                scaleHouse(gameObject.transform.GetChild(i).gameObject,value);
+            }
         }
 
         public void changeScale(SliderEventData sliderData){
-            scale(_platform, sliderData.NewValue*2f);
-            try{
-                _platform.GetChild(0).GetComponent<BoundsControl>().UpdateBounds();
-            }
+            scaleHouse(_platform, sliderData.NewValue*2f);
+            
         } 
 
         private bool ContainsDirs(Entry entry)
