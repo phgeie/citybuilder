@@ -10,6 +10,7 @@ using TMPro;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace CityAR
 {
@@ -18,9 +19,12 @@ namespace CityAR
         public GameObject districtPrefab;
         public GameObject housePrefab;
         public PinchSlider slider;
+        public TextMeshPro name;
+        public ToolTip tooltip;
         private DataObject _dataObject;
         private GameObject _platform;
         private Data _data;
+        private int metric = 0;
 
         private void Start()
         {
@@ -52,7 +56,7 @@ namespace CityAR
                 float x = entry.x;
                 float z = entry.z;
 
-                float dirLocs = entry.numberOfLines;
+                float dirLocs = GetMetricValue(entry);
                 entry.color = GetColorForDepth(entry.deepth);
 
                 BuildDistrictBlock(entry, false);
@@ -64,7 +68,7 @@ namespace CityAR
 
                     if (subEntry.type.Equals("Dir"))
                     {
-                        float ratio = subEntry.numberOfLines / dirLocs;
+                        float ratio = GetMetricValue(subEntry) / dirLocs;
                         subEntry.deepth = entry.deepth + 1;
 
                         if (splitHorizontal)
@@ -195,10 +199,19 @@ namespace CityAR
             entry.position = newPosition;
             GameObject prefabInstance = Instantiate(housePrefab, parent.transform, true);
 
-            prefabInstance.GetComponent<houseData>().value = entry.numberOfLines;
+            float h = GetMetricValue(entry);
+            var houseData = prefabInstance.GetComponent<houseData>();
+            houseData.value = h;
+            houseData.name = entry.name;
+            houseData.nol = entry.numberOfLines;
+            houseData.nom = entry.numberOfMethods;
+            houseData.noac = entry.numberOfAbstractClasses;
+            houseData.noi = entry.numberOfInterfaces;
+
+            
+            prefabInstance.GetComponent<interactWithHouse>().setData(tooltip, prefabInstance);
 
             prefabInstance.name = entry.name + "_Build_" + parentEntry.deepth;
-            float h = entry.numberOfLines;
             prefabInstance.transform.localScale += new Vector3(scale.x, h, scale.z);
             prefabInstance.transform.localPosition = new Vector3(entry.position.x, h / 2f + 1f, entry.position.z);
         }
@@ -230,8 +243,8 @@ namespace CityAR
             Vector3 scale = gameObject.transform.localScale;
             Vector3 position = gameObject.transform.localPosition;
             float h = houseData.value;
-            gameObject.transform.localScale = new Vector3(scale.x, h*value, scale.z);
-            gameObject.transform.localPosition = new Vector3(position.x, h*value/2f + 1f, position.z);
+            gameObject.transform.localScale = new Vector3(scale.x, h*value*2f, scale.z);
+            gameObject.transform.localPosition = new Vector3(position.x, h*value + 1f, position.z);
             }
             for (int i = 0; i < gameObject.transform.childCount; i++)
             {
@@ -240,7 +253,8 @@ namespace CityAR
         }
 
         public void changeScale(SliderEventData sliderData){
-            scaleHouse(_platform, sliderData.NewValue*2f);
+            if (sliderData != null) scaleHouse(_platform, sliderData.NewValue*2f);
+            _platform.GetComponent<BoundsControl>().UpdateBounds();
             
         } 
 
@@ -260,13 +274,64 @@ namespace CityAR
         private Color GetColorForDepth(int depth)
         {
             float normalizedDepth = Mathf.Clamp(depth / 15.0f, 0, 1);
-
-            // Blautöne generieren: Blau wird dunkler, je tiefer die Tiefe
-            float blue = 1.0f; // Blau bleibt bei voller Intensität
-            float green = (float)((1 - normalizedDepth)); // Grün reduziert sich mit der Tiefe
-            float red = 0.0f; // Rot bleibt immer bei 0 für reinen Blauton
+            float blue = 1.0f;
+            float green = (float)((1 - normalizedDepth));
+            float red = 0.0f;
 
             return new Color(red, green, blue);
         }
+
+        private float GetMetricValue(Entry entry){
+            if (metric == 0){
+                name.text = "Number of Lines";
+                return entry.numberOfLines;
+            }
+            if (metric == 1){
+                name.text = "Number of Methods";
+                return entry.numberOfMethods;
+            }
+            if (metric == 2){
+                name.text = "Number of AbstractClasses";
+                return entry.numberOfAbstractClasses;
+            }
+            if (metric == 3){
+                name.text = "Number of Interfaces";
+                return entry.numberOfInterfaces;
+            }
+            return 0f;
+        }
+
+        public void nextMetrcValue(){
+            setMetricValue(metric+1);
+        }
+
+        public void prevMetrcValue(){
+            setMetricValue(metric-1);
+        }
+
+        public void setMetricValue(int metricValue)
+        {
+            metric = (metricValue + 4 ) % 4;
+            var boundsControl = _platform.GetComponent<BoundsControl>();
+            boundsControl.enabled = false;
+            var temp = _platform.transform.localRotation;
+            slider.SliderValue = 0.5f;
+            for (int i = 1; i < _platform.transform.childCount; i++)
+            {
+                Destroy(_platform.transform.GetChild(i).gameObject);
+            }
+            _platform.transform.localRotation = Quaternion.Euler(0f,0f,0f);
+            BuildCity(_data.ParseData());
+            _platform.transform.localRotation = temp;
+            boundsControl.enabled = true;
+            StartCoroutine(UpdateBoundsAfterDelay());
+        }
+
+        private IEnumerator UpdateBoundsAfterDelay()
+    {
+        yield return new WaitForSeconds(0.001f);
+
+        _platform.GetComponent<BoundsControl>().UpdateBounds();
+    }
     }
 }
