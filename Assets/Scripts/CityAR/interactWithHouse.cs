@@ -20,7 +20,7 @@ public class interactWithHouse : MonoBehaviour, IMixedRealityTouchHandler
         tooltip.gameObject.SetActive(true);
         var houseData = house.GetComponent<houseData>();
         tooltip.ToolTipText = houseData.name + ":\n       Number of Lines: " + houseData.nol + ",\n       Number of Methods: " + houseData.nom + ",\n       Number of Abstract Classes: " + houseData.noac + ",\n       Number of Iterfaces: " + houseData.noi;
-        house.GetComponent<MeshRenderer>().material.color = Color.red;
+        house.GetComponent<MeshRenderer>().material.color = Color.blue;
     }
 
     public void OnTouchCompleted(HandTrackingInputEventData eventData)

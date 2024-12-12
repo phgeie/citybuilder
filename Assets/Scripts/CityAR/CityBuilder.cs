@@ -126,7 +126,6 @@ namespace CityAR
             float w = entry.w; // w -> x coordinate
             float h = entry.h; // h -> z coordinate
 
-
             entry.color = GetColorForDepth(entry.deepth);
 
             if (w * h > 0)
@@ -152,8 +151,7 @@ namespace CityAR
                     float filesCount = entry.files.Count;
                     List<Entry> files = entry.files;
                     int gridSize = Mathf.CeilToInt(Mathf.Sqrt(filesCount));
-                    for (int i = 0; i < filesCount; i++)
-                    {
+                    for (int i = 0; i < filesCount; i++){
                         Entry file = files[i];
                         int row = i / gridSize;
                         int column = i % gridSize;
@@ -190,13 +188,13 @@ namespace CityAR
 
             prefabInstance.name = entry.name;
             Vector3 scale = new Vector3(0.015f / parent.transform.localScale.x, 0.015f / parent.transform.localScale.y, 0.015f / parent.transform.localScale.z);
-            prefabInstance.transform.localScale += new Vector3(scale.x, height, scale.z);
+            prefabInstance.transform.localScale = new Vector3(scale.x, height, scale.z);
 
             Vector3 newPosition = new Vector3(-0.5f, 0f, 0.5f) + new Vector3(xOffset, 0, zOffset);
             prefabInstance.transform.localPosition = new Vector3(newPosition.x, height / 2f + 1f, newPosition.z);
         }
 
-        public void ChangeScale(SliderEventData sliderData){
+        public void ChangeHouseScale(SliderEventData sliderData){
             if (sliderData != null) ScaleHouse(_platform, sliderData.NewValue*10f);
             _platform.GetComponent<BoundsControl>().UpdateBounds();
         } 
@@ -259,11 +257,11 @@ namespace CityAR
             return 0f;
         }
 
-        public void NextMetrcValue(){
+        public void NextMetricValue(){
             SetMetricValue(metric+1);
         }
 
-        public void PrevMetrcValue(){
+        public void PrevMetricValue(){
             SetMetricValue(metric-1);
         }
 
