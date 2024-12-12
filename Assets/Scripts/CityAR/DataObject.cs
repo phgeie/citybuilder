@@ -31,8 +31,6 @@ namespace DefaultNamespace
         public float w;
         public float h;
         public int deepth;
-        public Vector3 position;
-        public Vector3 scale;
         public GridObjectCollection goc;
         public Entry parentEntry;
         public Color color;

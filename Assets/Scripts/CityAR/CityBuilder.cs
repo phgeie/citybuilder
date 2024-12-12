@@ -1,16 +1,12 @@
-using System;
-using System.Linq;
 using DefaultNamespace;
-using Microsoft.MixedReality.Toolkit;
-using Microsoft.MixedReality.Toolkit.Input;
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 using Microsoft.MixedReality.Toolkit.UI;
 using Microsoft.MixedReality.Toolkit.UI.BoundsControl;
-using Microsoft.MixedReality.Toolkit.Utilities;
 using TMPro;
-using UnityEngine;
-using Vector3 = UnityEngine.Vector3;
-using System.Collections.Generic;
-using System.Collections;
+
+// using https://assetstore.unity.com/packages/2d/textures-materials/diverse-space-skybox-11044 skybox
 
 namespace CityAR
 {
@@ -153,110 +149,73 @@ namespace CityAR
                     prefabInstance.transform.localScale = new Vector3(entry.w, 1, entry.h);
                     prefabInstance.transform.localPosition = new Vector3(entry.x, entry.deepth + 0.001f, entry.z);
 
-
-                    Vector3 scale = prefabInstance.transform.localScale;
-                    float scaleX = scale.x - (entry.deepth * 0.005f);
-                    float scaleZ = scale.z - (entry.deepth * 0.005f);
-                    float shiftX = (scale.x - scaleX) / 2f;
-                    float shiftZ = (scale.z - scaleZ) / 2f;
-                    prefabInstance.transform.localScale = new Vector3(scaleX, scale.y, scaleZ);
-                    Vector3 position = prefabInstance.transform.localPosition;
-                    prefabInstance.transform.localPosition = new Vector3(position.x - shiftX, position.y, position.z + shiftZ);
-
                     float filesCount = entry.files.Count;
-                    List<Entry> files = new List<Entry>();
-                    for (int i = 0; i < filesCount; i++)
-                    {
-                        Entry file = entry.files[i];
-                        if (file.type.Equals("File"))
-                        {
-                            files.Add(file);
-                        }
-                    }
-
-                    filesCount = files.Count;
+                    List<Entry> files = entry.files;
                     int gridSize = Mathf.CeilToInt(Mathf.Sqrt(filesCount));
-                    float gridWidth = gridSize;
-                    float gridHeight = gridSize;
                     for (int i = 0; i < filesCount; i++)
                     {
                         Entry file = files[i];
                         int row = i / gridSize;
                         int column = i % gridSize;
-                        float xOffset = (row - (gridSize - 1) / 2.0f) * 0.02f / prefabInstance.transform.localScale.x;
-                        float zOffset = (column - (gridSize - 1) / 2.0f) * 0.02f / prefabInstance.transform.localScale.z;
+                        float xOffset = (row - (gridSize - 1) / 2.0f) * 0.03f / prefabInstance.transform.localScale.x;
+                        float zOffset = (column - (gridSize - 1) / 2.0f) * 0.03f / prefabInstance.transform.localScale.z;
 
                         BuildHouse(file, entry, prefabInstance, s, xOffset, zOffset);
                     }
                 }
+                
+                Vector3 scale = prefabInstance.transform.localScale;
+                float scaleX = scale.x - (entry.deepth * 0.005f);
+                float scaleZ = scale.z - (entry.deepth * 0.005f);
+                float shiftX = (scale.x - scaleX) / 2f;
+                float shiftZ = (scale.z - scaleZ) / 2f;
+                prefabInstance.transform.localScale = new Vector3(scaleX, scale.y, scaleZ);
+                Vector3 position = prefabInstance.transform.localPosition;
+                prefabInstance.transform.localPosition = new Vector3(position.x - shiftX, position.y, position.z + shiftZ);
             }
         }
 
-        private void BuildHouse(Entry entry, Entry parentEntry, GameObject parent, float s, float xOffset, float zOffset)
-        {
-            Vector3 scale = ScaleToParent(parent);
-            Vector3 newPosition = new Vector3(-0.5f, 0f, 0.5f) + new Vector3(xOffset, 0, zOffset);
-            entry.position = newPosition;
+        private void BuildHouse(Entry entry, Entry parentEntry, GameObject parent, float s, float xOffset, float zOffset){
             GameObject prefabInstance = Instantiate(housePrefab, parent.transform, true);
+            prefabInstance.GetComponent<interactWithHouse>().setData(tooltip, prefabInstance);
 
-            float h = GetMetricValue(entry);
+            float height = GetMetricValue(entry);
             var houseData = prefabInstance.GetComponent<houseData>();
-            houseData.value = h;
+            houseData.value = height;
             houseData.name = entry.name;
             houseData.nol = entry.numberOfLines;
             houseData.nom = entry.numberOfMethods;
             houseData.noac = entry.numberOfAbstractClasses;
             houseData.noi = entry.numberOfInterfaces;
 
-            
-            prefabInstance.GetComponent<interactWithHouse>().setData(tooltip, prefabInstance);
+            prefabInstance.name = entry.name;
+            Vector3 scale = new Vector3(0.015f / parent.transform.localScale.x, 0.015f / parent.transform.localScale.y, 0.015f / parent.transform.localScale.z);
+            prefabInstance.transform.localScale += new Vector3(scale.x, height, scale.z);
 
-            prefabInstance.name = entry.name + "_Build_" + parentEntry.deepth;
-            prefabInstance.transform.localScale += new Vector3(scale.x, h, scale.z);
-            prefabInstance.transform.localPosition = new Vector3(entry.position.x, h / 2f + 1f, entry.position.z);
+            Vector3 newPosition = new Vector3(-0.5f, 0f, 0.5f) + new Vector3(xOffset, 0, zOffset);
+            prefabInstance.transform.localPosition = new Vector3(newPosition.x, height / 2f + 1f, newPosition.z);
         }
 
-        private Vector3 ScaleToParent(GameObject parent)
-        {
-            Vector3 size = new Vector3(0.01f, 0.01f, 0.01f);
-            Transform currentTransform = parent.transform;
-
-            while (currentTransform != null && currentTransform != _platform.transform)
-            {
-                size = new Vector3(
-                    size.x / currentTransform.localScale.x,
-                    size.y / currentTransform.localScale.y,
-                    size.z / currentTransform.localScale.z
-                );
-                currentTransform = currentTransform.parent;
-            }
-
-            return size;
-        }
-
-        public void scaleHouse(GameObject gameObject, float value){
-            if (gameObject == null) return;
-
-            var houseData = gameObject.GetComponent<houseData>();
-            if (houseData != null){
-            
-            Vector3 scale = gameObject.transform.localScale;
-            Vector3 position = gameObject.transform.localPosition;
-            float h = houseData.value;
-            gameObject.transform.localScale = new Vector3(scale.x, h*value*2f, scale.z);
-            gameObject.transform.localPosition = new Vector3(position.x, h*value + 1f, position.z);
-            }
-            for (int i = 0; i < gameObject.transform.childCount; i++)
-            {
-                scaleHouse(gameObject.transform.GetChild(i).gameObject,value);
-            }
-        }
-
-        public void changeScale(SliderEventData sliderData){
-            if (sliderData != null) scaleHouse(_platform, sliderData.NewValue*2f);
+        public void ChangeScale(SliderEventData sliderData){
+            if (sliderData != null) ScaleHouse(_platform, sliderData.NewValue*10f);
             _platform.GetComponent<BoundsControl>().UpdateBounds();
-            
         } 
+
+        public void ScaleHouse(GameObject house, float value){
+            var houseData = house.GetComponent<houseData>();
+
+            if (houseData != null){
+                Vector3 scale = house.transform.localScale;
+                Vector3 position = house.transform.localPosition;
+                float height = houseData.value;
+                house.transform.localScale = new Vector3(scale.x, height*value, scale.z);
+                house.transform.localPosition = new Vector3(position.x, height*value/2f + 1f, position.z);
+            }
+
+            for (int i = 0; i < house.transform.childCount; i++){
+                ScaleHouse(house.transform.GetChild(i).gameObject, value);
+            }
+        }
 
         private bool ContainsDirs(Entry entry)
         {
@@ -271,9 +230,8 @@ namespace CityAR
             return false;
         }
 
-        private Color GetColorForDepth(int depth)
-        {
-            float normalizedDepth = Mathf.Clamp(depth / 15.0f, 0, 1);
+        private Color GetColorForDepth(int depth){
+            float normalizedDepth = Mathf.Clamp(depth / 7.5f, 0, 1);
             float blue = 1.0f;
             float green = (float)((1 - normalizedDepth));
             float red = 0.0f;
@@ -301,37 +259,41 @@ namespace CityAR
             return 0f;
         }
 
-        public void nextMetrcValue(){
-            setMetricValue(metric+1);
+        public void NextMetrcValue(){
+            SetMetricValue(metric+1);
         }
 
-        public void prevMetrcValue(){
-            setMetricValue(metric-1);
+        public void PrevMetrcValue(){
+            SetMetricValue(metric-1);
         }
 
-        public void setMetricValue(int metricValue)
-        {
-            metric = (metricValue + 4 ) % 4;
-            var boundsControl = _platform.GetComponent<BoundsControl>();
-            boundsControl.enabled = false;
-            var temp = _platform.transform.localRotation;
-            slider.SliderValue = 0.5f;
-            for (int i = 1; i < _platform.transform.childCount; i++)
-            {
+        public void SetMetricValue(int metricValue){
+            metric = (metricValue + 4) % 4;
+            UpdateHouses();
+        }
+
+        public void UpdateHouses(){
+            for (int i = 1; i < _platform.transform.childCount; i++){
                 Destroy(_platform.transform.GetChild(i).gameObject);
             }
-            _platform.transform.localRotation = Quaternion.Euler(0f,0f,0f);
-            BuildCity(_data.ParseData());
-            _platform.transform.localRotation = temp;
+
+            var boundsControl = _platform.GetComponent<BoundsControl>();
+            boundsControl.enabled = false;
+            var prevRotation = _platform.transform.rotation;
+            _platform.transform.rotation = Quaternion.Euler(0,0,0);
+            _dataObject = _data.ParseData();
+            BuildCity(_dataObject);
+            _platform.transform.rotation = prevRotation;
             boundsControl.enabled = true;
+
+            slider.SliderValue = 0.1f;
             StartCoroutine(UpdateBoundsAfterDelay());
         }
 
-        private IEnumerator UpdateBoundsAfterDelay()
-    {
-        yield return new WaitForSeconds(0.001f);
+        private IEnumerator UpdateBoundsAfterDelay(){
+            yield return new WaitForSeconds(0.001f);
 
-        _platform.GetComponent<BoundsControl>().UpdateBounds();
-    }
+            _platform.GetComponent<BoundsControl>().UpdateBounds();
+        }
     }
 }
